@@ -1,0 +1,22 @@
+```mermaid
+graph TD;
+    A[Presentation Layer] -->|uses| B[Processing Layer];
+    B -->|stores results| C[Storage Layer];
+    D[Data Acquisition Layer] -->|provides data to| B;
+    
+    A1[Dashboard HTML/JS] --> A;
+    A2[Admin Panel] --> A;
+    A3[Mobile UI] --> A;
+    
+    B1[Detection Engine] --> B;
+    B2[Classification Algorithm] --> B;
+    B3[Validation Module] --> B;
+    
+    C1[Blockchain Ethereum] --> C;
+    C2[IPFS Storage] --> C;
+    C3[Local Cache] --> C;
+    
+    D1[Telegram API Telethon] --> D;
+    D2[Test Data Generator] --> D;
+    D3[Web Scraper] --> D;
+```
