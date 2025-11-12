@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suspicious Message Checker Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: bold;
+            display: none;
+        }
+        .result.suspicious {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+            display: block;
+        }
+        .result.not-suspicious {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+            display: block;
+        }
+        .examples {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .example-box {
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .example-box:hover {
+            transform: translateY(-2px);
+        }
+        .example-box.pass {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .example-box.fail {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        .keyword-list {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .keyword {
+            background: #dc3545;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Suspicious Message Checker</h1>
+        
+        <div class="test-section">
+            <h3>Test Your Message:</h3>
+            <div class="input-group">
+                <input type="text" id="testInput" placeholder="Enter a message to test...">
+                <button onclick="checkMessage()">Check</button>
+            </div>
+            <div id="result" class="result"></div>
+        </div>
+
+        <div class="keyword-list">
+            <h3>⚠️ Suspicious Keywords:</h3>
+            <div class="keywords">
+                <span class="keyword">drug</span>
+                <span class="keyword">cocaine</span>
+                <span class="keyword">weed</span>
+                <span class="keyword">lsd</span>
+                <span class="keyword">ecstasy</span>
+                <span class="keyword">heroin</span>
+                <span class="keyword">meth</span>
+                <span class="keyword">marijuana</span>
+                <span class="keyword">cannabis</span>
+                <span class="keyword">opium</span>
+                <span class="keyword">fentanyl</span>
+                <span class="keyword">mdma</span>
+                <span class="keyword">crack</span>
+                <span class="keyword">methamphetamine</span>
+                <span class="keyword">amphetamine</span>
+                <span class="keyword">ketamine</span>
+                <span class="keyword">pcp</span>
+            </div>
+        </div>
+
+        <div class="examples">
+            <h3>📝 Click to Test Examples:</h3>
+            <div class="example-grid">
+                <div class="example-box pass" onclick="testExample('weed')">
+                    <div style="font-weight: bold;">✅ "weed"</div>
+                    <div style="font-size: 12px; color: #155724;">WILL BE STORED</div>
+                </div>
+                <div class="example-box fail" onclick="testExample('Hello world')">
+                    <div style="font-weight: bold;">❌ "Hello world"</div>
+                    <div style="font-size: 12px; color: #721c24;">WILL BE REJECTED</div>
+                </div>
+                <div class="example-box pass" onclick="testExample('or cocaine')">
+                    <div style="font-weight: bold;">✅ "or cocaine"</div>
+                    <div style="font-size: 12px; color: #155724;">WILL BE STORED</div>
+                </div>
+                <div class="example-box fail" onclick="testExample('Meeting at 5pm')">
+                    <div style="font-weight: bold;">❌ "Meeting at 5pm"</div>
+                    <div style="font-size: 12px; color: #721c24;">WILL BE REJECTED</div>
+                </div>
+                <div class="example-box pass" onclick="testExample('selling drug')">
+                    <div style="font-weight: bold;">✅ "selling drug"</div>
+                    <div style="font-size: 12px; color: #155724;">WILL BE STORED</div>
+                </div>
+                <div class="example-box fail" onclick="testExample('How are you?')">
+                    <div style="font-weight: bold;">❌ "How are you?"</div>
+                    <div style="font-size: 12px; color: #721c24;">WILL BE REJECTED</div>
+                </div>
+                <div class="example-box pass" onclick="testExample('got some lsd')">
+                    <div style="font-weight: bold;">✅ "got some lsd"</div>
+                    <div style="font-size: 12px; color: #155724;">WILL BE STORED</div>
+                </div>
+                <div class="example-box fail" onclick="testExample('Normal message')">
+                    <div style="font-weight: bold;">❌ "Normal message"</div>
+                    <div style="font-size: 12px; color: #721c24;">WILL BE REJECTED</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Same logic as dashboard.html
+        function isSuspicious(message) {
+            const keywords = ['drug', 'cocaine', 'weed', 'lsd', 'ecstasy', 'heroin', 'meth', 
+                              'marijuana', 'cannabis', 'opium', 'fentanyl', 'mdma', 'crack',
+                              'methamphetamine', 'amphetamine', 'ketamine', 'pcp'];
+            
+            const lowerMessage = message.toLowerCase();
+            
+            for (const keyword of keywords) {
+                if (lowerMessage.includes(keyword)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkMessage() {
+            const input = document.getElementById('testInput');
+            const message = input.value.trim();
+            const resultDiv = document.getElementById('result');
+
+            if (!message) {
+                resultDiv.className = 'result not-suspicious';
+                resultDiv.innerHTML = '⚠️ Please enter a message to test';
+                return;
+            }
+
+            const suspicious = isSuspicious(message);
+
+            if (suspicious) {
+                resultDiv.className = 'result suspicious';
+                resultDiv.innerHTML = `
+                    ✅ <strong>SUSPICIOUS MESSAGE DETECTED!</strong><br>
+                    This message WILL BE STORED on blockchain as evidence.<br>
+                    Contains suspicious keyword(s).
+                `;
+            } else {
+                resultDiv.className = 'result not-suspicious';
+                resultDiv.innerHTML = `
+                    ❌ <strong>NOT SUSPICIOUS</strong><br>
+                    This message WILL NOT BE STORED on blockchain.<br>
+                    No suspicious keywords detected.
+                `;
+            }
+        }
+
+        function testExample(message) {
+            document.getElementById('testInput').value = message;
+            checkMessage();
+        }
+
+        // Allow Enter key to check
+        document.getElementById('testInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkMessage();
+            }
+        });
+    </script>
+</body>
+</html>

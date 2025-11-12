@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Message Storage</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .connection-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            display: block;
+        }
+
+        .messages-section {
+            margin-top: 30px;
+        }
+
+        .messages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .messages-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .message-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .messages-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .message-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .message-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-hash {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: bold;
+            word-break: break-all;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .message-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .message-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .no-messages {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Blockchain Message Storage</h1>
+        <p class="subtitle">Store message hashes on the blockchain using your ML model</p>
+
+        <div id="connectionStatus" class="connection-status disconnected">
+            ⚠️ Connecting to Ganache...
+        </div>
+
+        <div class="input-section">
+            <h3 style="margin-bottom: 15px; color: #333;">📝 Store New Message</h3>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Enter your message here..." />
+                <button id="submitBtn" onclick="storeMessage()">Store on Blockchain</button>
+            </div>
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+
+        <div class="messages-section">
+            <div class="messages-header">
+                <h2>📋 Stored Messages</h2>
+                <div class="message-count" id="messageCount">0 messages</div>
+            </div>
+            <div id="messagesList" class="messages-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading messages from blockchain...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contract configuration (from your Python code)
+        const CONTRACT_ADDRESS = '0x3B2bD66c48FADbcb0E63137B3958018494B9fB0B';
+        const GANACHE_URL = 'http://127.0.0.1:7545';
+        
+        const CONTRACT_ABI = [
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "internalType": "uint256",
+                        "name": "messageId",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "string",
+                        "name": "messageHash",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "MessageStored",
+                "type": "event"
+            },
+            {
+                "inputs": [],
+                "name": "getAllMessages",
+                "outputs": [
+                    {
+                        "components": [
+                            {
+                                "internalType": "string",
+                                "name": "messageHash",
+                                "type": "string"
+                            },
+                            {
+                                "internalType": "uint256",
+                                "name": "timestamp",
+                                "type": "uint256"
+                            },
+                            {
+                                "internalType": "address",
+                                "name": "sender",
+                                "type": "address"
+                            },
+                            {
+                                "internalType": "string",
+                                "name": "senderInfo",
+                                "type": "string"
+                            }
+                        ],
+                        "internalType": "struct MessageHashStorage.MessageRecord[]",
+                        "name": "",
+                        "type": "tuple[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_messageId",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getMessage",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "messageHash",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "senderInfo",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_sender",
+                        "type": "address"
+                    }
+                ],
+                "name": "getMessagesBySender",
+                "outputs": [
+                    {
+                        "internalType": "uint256[]",
+                        "name": "",
+                        "type": "uint256[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "getTotalMessages",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "messages",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "messageHash",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "timestamp",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "senderInfo",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "senderMessages",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "_messageHash",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_senderInfo",
+                        "type": "string"
+                    }
+                ],
+                "name": "storeMessageHash",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        let web3;
+        let contract;
+        let accounts;
+
+        // Initialize Web3 and contract
+        async function init() {
+            try {
+                // Connect to Ganache
+                web3 = new Web3(new Web3.providers.HttpProvider(GANACHE_URL));
+                
+                // Check connection
+                const isConnected = await web3.eth.net.isListening();
+                if (!isConnected) {
+                    throw new Error('Cannot connect to Ganache');
+                }
+
+                // Get accounts
+                accounts = await web3.eth.getAccounts();
+                if (accounts.length === 0) {
+                    throw new Error('No accounts found in Ganache');
+                }
+
+                // Create contract instance
+                contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+
+                // Update connection status
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+                document.getElementById('connectionStatus').innerHTML = `✅ Connected to Ganache | Account: ${accounts[0].substring(0, 10)}...`;
+
+                // Load existing messages
+                await loadMessages();
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                document.getElementById('connectionStatus').innerHTML = `❌ Connection failed: ${error.message}`;
+                showStatus('Make sure Ganache is running on http://127.0.0.1:7545', 'error');
+            }
+        }
+
+        // Hash message using SHA-256 (same as Python)
+        function hashMessage(message) {
+            return CryptoJS.SHA256(message).toString(CryptoJS.enc.Hex);
+        }
+
+        // Store message on blockchain
+        async function storeMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                showStatus('Please enter a message', 'error');
+                return;
+            }
+
+            if (!contract || !accounts) {
+                showStatus('Not connected to blockchain. Please refresh the page.', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Storing...';
+
+            try {
+                // Hash the message
+                const messageHash = hashMessage(message);
+                console.log('Message hash:', messageHash);
+
+                // Get current timestamp
+                const timestamp = new Date().toISOString();
+                const senderInfo = `Web UI | Time: ${timestamp}`;
+
+                // Call smart contract
+                showStatus('Sending transaction to blockchain...', 'info');
+                
+                const receipt = await contract.methods.storeMessageHash(
+                    messageHash,
+                    senderInfo
+                ).send({ 
+                    from: accounts[0],
+                    gas: 500000  // Increase gas limit to prevent out of gas errors
+                });
+
+                console.log('Transaction receipt:', receipt);
+
+                // Clear input
+                messageInput.value = '';
+
+                // Show success message
+                showStatus(`✅ Message stored successfully! Tx: ${receipt.transactionHash.substring(0, 20)}...`, 'success');
+
+                // Reload messages
+                setTimeout(() => loadMessages(), 1000);
+
+            } catch (error) {
+                console.error('Error storing message:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Store on Blockchain';
+            }
+        }
+
+        // Load all messages from blockchain
+        async function loadMessages() {
+            if (!contract) return;
+
+            try {
+                // First check if contract exists and has the method
+                const code = await web3.eth.getCode(CONTRACT_ADDRESS);
+                if (code === '0x' || code === '0x0') {
+                    throw new Error('Contract not found at this address. Please redeploy your contract or update the contract address.');
+                }
+
+                // Try to get total messages first (simpler call)
+                let totalMessages;
+                try {
+                    totalMessages = await contract.methods.getTotalMessages().call();
+                    console.log('Total messages on blockchain:', totalMessages);
+                } catch (e) {
+                    console.error('Error calling getTotalMessages:', e);
+                    throw new Error('Contract method not responding. Verify contract is deployed correctly.');
+                }
+
+                // If no messages, display empty state
+                if (totalMessages == 0) {
+                    displayMessages([]);
+                    return;
+                }
+
+                // Get all messages
+                const messages = await contract.methods.getAllMessages().call();
+                console.log('Retrieved messages:', messages);
+                displayMessages(messages);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messagesList').innerHTML = `
+                    <div class="no-messages">
+                        ❌ Error loading messages: ${error.message}
+                        <br><br>
+                        <strong>Troubleshooting:</strong>
+                        <ul style="text-align: left; margin-top: 10px;">
+                            <li>✓ Ganache is running at http://127.0.0.1:7545</li>
+                            <li>✓ Contract address: ${CONTRACT_ADDRESS}</li>
+                            <li>✓ Check if contract is deployed on current Ganache instance</li>
+                            <li>✓ If Ganache was restarted, you need to redeploy the contract</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        // Display messages in the UI
+        function displayMessages(messages) {
+            const messagesList = document.getElementById('messagesList');
+            const messageCount = document.getElementById('messageCount');
+
+            messageCount.textContent = `${messages.length} message${messages.length !== 1 ? 's' : ''}`;
+
+            if (messages.length === 0) {
+                messagesList.innerHTML = `
+                    <div class="no-messages">
+                        📭 No messages stored yet. Be the first to add one!
+                    </div>
+                `;
+                return;
+            }
+
+            // Display messages in reverse order (newest first)
+            // Create a copy of the array before reversing (contract returns read-only array)
+            const messagesArray = [...messages];
+            messagesList.innerHTML = messagesArray.reverse().map((msg, index) => {
+                const date = new Date(msg.timestamp * 1000);
+                const formattedDate = date.toLocaleString();
+                
+                return `
+                    <div class="message-card">
+                        <div class="message-hash">🔐 Hash: ${msg.messageHash}</div>
+                        <div class="message-meta">
+                            <span>📅 ${formattedDate}</span>
+                            <span>👤 ${msg.sender.substring(0, 10)}...</span>
+                            <span>ℹ️ ${msg.senderInfo}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.className = 'status-message';
+                }, 5000);
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    storeMessage();
+                }
+            });
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "major-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js --network ganache",
+    "test": "hardhat test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.2",
+    "esbuild": "^0.24.2",
+    "ethers": "^6.15.0",
+    "hardhat": "^3.0.9"
+  }
+}
